@@ -41,11 +41,11 @@ module julia
     type(c_ptr) :: res
    end function jl_apply_array_type
 
-   function jl_box_long(x) bind(C, name="jl_box_long")
+   function jl_box_int64(x) bind(C, name="jl_box_int64")
     import :: c_ptr, c_long
     integer(c_long), value :: x   ! Pass by value
-    type(c_ptr) :: jl_box_long     ! Returns a pointer to jl_value_t
-   end function jl_box_long
+    type(c_ptr) :: jl_box_int64     ! Returns a pointer to jl_value_t
+   end function jl_box_int64
 
    function jl_ptr_to_array(array_type, data, dims, own_buffer) result(res) bind(C,name="jl_ptr_to_array")
     import :: c_ptr, c_int
@@ -132,8 +132,8 @@ program test_matmul
  mulbang = jl_get_function(mylinalg, "mul!"//C_NULL_CHAR)
 
  fun_tuple = jl_get_function(jl_main_module, "tuple"//C_NULL_CHAR)
- arg(1) = jl_box_long(2)
- arg(2) = jl_box_long(2)
+ arg(1) = jl_box_int64(2_8)
+ arg(2) = jl_box_int64(2_8)
 
 
  ! Array type for Array{Float64,2}
