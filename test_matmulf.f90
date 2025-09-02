@@ -113,6 +113,16 @@ contains
   res = jl_call(fun_tuple, arg, size(x))
  end function jl_ntuple_int64
 
+ function jl_to_array_f64_2(A_data) result(res)
+   real(8), target :: A_data(:,:)
+   type(c_ptr) :: dims, res
+   type(c_ptr) :: array2d_type
+
+   dims = jl_ntuple_int64(int(shape(A_data),8))
+   array2d_type = jl_apply_array_type(jl_float64_type, size(shape(A_data)))
+   res = jl_ptr_to_array(array2d_type, c_loc(A_data), dims, 0)
+ end function jl_to_array_f64_2
+
 end module julia
 
 
@@ -130,7 +140,7 @@ program test_matmul
  ! Matrix size
  integer(c_int), parameter :: n = 2
  real(c_double), dimension(n,n), target :: A_data, B_data
- real(c_double), dimension(n*n), target :: C_data = 0.0
+ real(c_double), dimension(n,n), target :: C_data = 0.0
 
  integer :: i, j
  type(c_ptr) :: tmp
@@ -164,6 +174,10 @@ program test_matmul
  B = jl_ptr_to_array(array2d_type, c_loc(B_data), dims, 0)
  C = jl_ptr_to_array(array2d_type, c_loc(C_data), dims, 0)
 
+ A = jl_to_array_f64_2(A_data)
+ B = jl_to_array_f64_2(B_data)
+ C = jl_to_array_f64_2(C_data)
+
  ! Call mul!(C, A, B)
  tmp = jl_call3(mulbang, C, A, B)
 
@@ -171,7 +185,7 @@ program test_matmul
  print *, "Result C = A*B:"
  do i = 1, n
    do j = 1, n
-     write(*,'(F6.2)', advance="no") C_data(i + (j-1)*n)
+     write(*,'(F6.2)', advance="no") C_data(i,j)
      write(*,'(A)', advance="no") " "
    end do
    print *
