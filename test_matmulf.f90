@@ -2,13 +2,15 @@ module julia
  use iso_c_binding
  implicit none
 
+ type(c_ptr) :: fun_tuple
+
  type(c_ptr),   bind(C, name="jl_main_module")  :: jl_main_module
  type(c_ptr),   bind(C, name="jl_float64_type") :: jl_float64_type
 
  interface
    ! --- Julia C API functions ---
-   subroutine jl_init() bind(C, name="jl_init")
-   end subroutine jl_init
+   subroutine ll_jl_init() bind(C, name="jl_init")
+   end subroutine ll_jl_init
 
    subroutine jl_atexit_hook(status) bind(C, name="jl_atexit_hook")
     import :: c_int
@@ -56,6 +58,14 @@ module julia
     type(c_ptr) :: res
    end function jl_ptr_to_array
 
+   function jl_call(fun, args, nargs) result(res) bind(C, name="jl_call")
+    import :: c_ptr, c_int
+    type(c_ptr), value :: fun
+    type(c_ptr), dimension(*) :: args
+    integer(c_int), value :: nargs
+    type(c_ptr) :: res
+   end function jl_call
+
    function jl_call2(f, arg1, arg2) result(res) bind(C, name="jl_call2")
     import :: c_ptr
     type(c_ptr), value :: f, arg1, arg2
@@ -69,16 +79,13 @@ module julia
    end function jl_call3
  end interface
 
- ! --- Helper function: build tuple of integers ---
- interface
-   function jl_tuple2(x1, x2) bind(C,name="jl_call_tuple2")
-    import :: c_ptr
-    type(c_ptr), value :: x1, x2
-    type(c_ptr) :: jl_tuple2
-   end function jl_tuple2
- end interface
 
 contains
+
+ subroutine jl_init()
+  call ll_jl_init()
+  fun_tuple = jl_get_function(jl_main_module, "tuple"//C_NULL_CHAR)
+ end subroutine jl_init
 
  function jl_get_function(mod, name) result(res)
   type(c_ptr), value :: mod
@@ -89,6 +96,22 @@ contains
   res = jl_get_global(mod,jl_symbol(name))
 
  end function jl_get_function
+
+
+ function jl_ntuple_int64(x) result(res)
+  implicit none
+  integer(8) :: x(:)
+  type(c_ptr) :: res
+
+  type(c_ptr) :: arg(size(x))
+  integer :: i
+
+  do i = 1,size(x)
+    arg(i) = jl_box_int64(x(i))
+  end do
+
+  res = jl_call(fun_tuple, arg, size(x))
+ end function jl_ntuple_int64
 
 end module julia
 
@@ -103,9 +126,6 @@ program test_matmul
  type(c_ptr) :: jl_array_type, mylinalg_val, mylinalg
  type(c_ptr) :: mulbang, dims, A, B, C
  type(c_ptr) :: array2d_type
-
- type(c_ptr) :: fun_tuple
- type(c_ptr) :: arg(2)        ! arguments array
 
  ! Matrix size
  integer(c_int), parameter :: n = 2
@@ -131,16 +151,13 @@ program test_matmul
  mylinalg = jl_get_global(jl_main_module, jl_symbol("MyLinAlg"//C_NULL_CHAR))
  mulbang = jl_get_function(mylinalg, "mul!"//C_NULL_CHAR)
 
- fun_tuple = jl_get_function(jl_main_module, "tuple"//C_NULL_CHAR)
- arg(1) = jl_box_int64(2_8)
- arg(2) = jl_box_int64(2_8)
-
+ dims = jl_ntuple_int64(int(shape(A_data),8))
 
  ! Array type for Array{Float64,2}
  array2d_type = jl_apply_array_type(jl_float64_type, size(shape(A_data)))
 
  ! Build dims tuple (n,n) by calling Julia's tuple function
- dims = jl_eval_string("(2,2)"//C_NULL_CHAR)  ! simple way in Fortran 95
+! dims = jl_eval_string("(2,2)"//C_NULL_CHAR)  ! simple way in Fortran 95
 
  ! Wrap C arrays (no copy)
  A = jl_ptr_to_array(array2d_type, c_loc(A_data), dims, 0)
