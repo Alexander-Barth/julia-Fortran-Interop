@@ -105,6 +105,7 @@ program test_matmul
  type(c_ptr) :: array2d_type
 
  type(c_ptr) :: fun_tuple
+ type(c_ptr) :: arg(2)        ! arguments array
 
  ! Matrix size
  integer(c_int), parameter :: n = 2
@@ -130,7 +131,9 @@ program test_matmul
  mylinalg = jl_get_global(jl_main_module, jl_symbol("MyLinAlg"//C_NULL_CHAR))
  mulbang = jl_get_function(mylinalg, "mul!"//C_NULL_CHAR)
 
- fun_tuple = jl_get_function(mylinalg, "tuple"//C_NULL_CHAR)
+ fun_tuple = jl_get_function(jl_main_module, "tuple"//C_NULL_CHAR)
+ arg(1) = jl_box_long(2)
+ arg(2) = jl_box_long(2)
 
 
  ! Array type for Array{Float64,2}
