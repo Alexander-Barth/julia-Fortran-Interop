@@ -130,6 +130,13 @@ contains
   tmp = jl_eval_string('push!(LOAD_PATH,"' // path // '")'//C_NULL_CHAR)
  end subroutine jl_add_load_path
 
+ subroutine jl_using(modname)
+  character(len=*) :: modname
+  type(c_ptr) :: tmp
+
+  tmp = jl_eval_string('using ' // modname // C_NULL_CHAR)
+ end subroutine jl_using
+
 
 end module julia
 
@@ -158,12 +165,10 @@ program test_matmul
  A_data = reshape([1.0, 3.0, 2.0, 4.0],shape(A_data))
  B_data = reshape([5.0, 7.0, 6.0, 8.0],shape(B_data))
  C_data = 0
- ! --- Initialize Julia ---
+
  call jl_init()
- call jl_add_load_path(".")
- ! Add current directory to LOAD_PATH and load MyLinAlg
- !tmp = jl_eval_string('push!(LOAD_PATH,".")'//C_NULL_CHAR)
- tmp = jl_eval_string('using MyLinAlg'//C_NULL_CHAR)
+ call jl_add_load_path('.')
+ call jl_using('MyLinAlg')
 
  ! Get MyLinAlg module and mul! function
  mylinalg = jl_get_global(jl_main_module, jl_symbol("MyLinAlg"//C_NULL_CHAR))
