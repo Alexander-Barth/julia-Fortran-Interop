@@ -8,7 +8,6 @@ module julia
  type(c_ptr),   bind(C, name="jl_float64_type") :: jl_float64_type
 
  interface
-   ! --- Julia C API functions ---
    subroutine ll_jl_init() bind(C, name="jl_init")
    end subroutine ll_jl_init
 
@@ -45,8 +44,8 @@ module julia
 
    function jl_box_int64(x) bind(C, name="jl_box_int64")
     import :: c_ptr, c_long
-    integer(c_long), value :: x   ! Pass by value
-    type(c_ptr) :: jl_box_int64     ! Returns a pointer to jl_value_t
+    integer(c_long), value :: x
+    type(c_ptr) :: jl_box_int64
    end function jl_box_int64
 
    function jl_ptr_to_array(array_type, data, dims, own_buffer) result(res) bind(C,name="jl_ptr_to_array")
@@ -89,12 +88,10 @@ contains
 
  function jl_get_function(mod, name) result(res)
   type(c_ptr), value :: mod
-  character(kind=c_char), dimension(*) :: name
+  character(len=*) :: name
   type(c_ptr) :: res
-  ! return (jl_function_t*)jl_get_global(m, jl_symbol(name));
 
-  res = jl_get_global(mod,jl_symbol(name))
-
+  res = jl_get_global(mod,jl_symbol(trim(name)//C_NULL_CHAR ))
  end function jl_get_function
 
 
@@ -130,29 +127,27 @@ contains
   tmp = jl_eval_string('push!(LOAD_PATH,"' // path // '")'//C_NULL_CHAR)
  end subroutine jl_add_load_path
 
- subroutine jl_using(modname)
+ function jl_using(modname) result(res)
   character(len=*) :: modname
-  type(c_ptr) :: tmp
+  type(c_ptr) :: tmp, res
 
   tmp = jl_eval_string('using ' // modname // C_NULL_CHAR)
- end subroutine jl_using
+  res = jl_get_global(jl_main_module, jl_symbol(modname//C_NULL_CHAR))
+ end function jl_using
 
 
 end module julia
 
 
-! test_matmul.f95
 program test_matmul
  use iso_c_binding
  use julia
  implicit none
 
- ! Julia types
  type(c_ptr) :: jl_array_type, mylinalg_val, mylinalg
  type(c_ptr) :: mulbang, dims, A, B, C
  type(c_ptr) :: array2d_type
 
- ! Matrix size
  integer(c_int), parameter :: n = 2
  real(c_double), dimension(n,n), target :: A_data, B_data
  real(c_double), dimension(n,n), target :: C_data = 0.0
@@ -160,19 +155,14 @@ program test_matmul
  integer :: i, j
  type(c_ptr) :: tmp
 
-
-
  A_data = reshape([1.0, 3.0, 2.0, 4.0],shape(A_data))
  B_data = reshape([5.0, 7.0, 6.0, 8.0],shape(B_data))
  C_data = 0
 
  call jl_init()
  call jl_add_load_path('.')
- call jl_using('MyLinAlg')
-
- ! Get MyLinAlg module and mul! function
- mylinalg = jl_get_global(jl_main_module, jl_symbol("MyLinAlg"//C_NULL_CHAR))
- mulbang = jl_get_function(mylinalg, "mul!"//C_NULL_CHAR)
+ mylinalg = jl_using('MyLinAlg')
+ mulbang = jl_get_function(mylinalg, "mul!")
 
  A = jl_to_array_f64_2(A_data)
  B = jl_to_array_f64_2(B_data)
