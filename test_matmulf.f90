@@ -123,6 +123,14 @@ contains
    res = jl_ptr_to_array(array2d_type, c_loc(A_data), dims, 0)
  end function jl_to_array_f64_2
 
+ subroutine jl_add_load_path(path)
+  character(len=*) :: path
+  type(c_ptr) :: tmp
+
+  tmp = jl_eval_string('push!(LOAD_PATH,"' // path // '")'//C_NULL_CHAR)
+ end subroutine jl_add_load_path
+
+
 end module julia
 
 
@@ -152,27 +160,14 @@ program test_matmul
  C_data = 0
  ! --- Initialize Julia ---
  call jl_init()
-
+ call jl_add_load_path(".")
  ! Add current directory to LOAD_PATH and load MyLinAlg
- tmp = jl_eval_string('push!(LOAD_PATH,".")'//C_NULL_CHAR)
+ !tmp = jl_eval_string('push!(LOAD_PATH,".")'//C_NULL_CHAR)
  tmp = jl_eval_string('using MyLinAlg'//C_NULL_CHAR)
 
  ! Get MyLinAlg module and mul! function
  mylinalg = jl_get_global(jl_main_module, jl_symbol("MyLinAlg"//C_NULL_CHAR))
  mulbang = jl_get_function(mylinalg, "mul!"//C_NULL_CHAR)
-
- dims = jl_ntuple_int64(int(shape(A_data),8))
-
- ! Array type for Array{Float64,2}
- array2d_type = jl_apply_array_type(jl_float64_type, size(shape(A_data)))
-
- ! Build dims tuple (n,n) by calling Julia's tuple function
-! dims = jl_eval_string("(2,2)"//C_NULL_CHAR)  ! simple way in Fortran 95
-
- ! Wrap C arrays (no copy)
- A = jl_ptr_to_array(array2d_type, c_loc(A_data), dims, 0)
- B = jl_ptr_to_array(array2d_type, c_loc(B_data), dims, 0)
- C = jl_ptr_to_array(array2d_type, c_loc(C_data), dims, 0)
 
  A = jl_to_array_f64_2(A_data)
  B = jl_to_array_f64_2(B_data)
