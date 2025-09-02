@@ -5,7 +5,7 @@
 #LDLIBS   += $(shell $(JL_SHARE)/julia-config.jl --ldlibs)
 
 
-JULIA_BASE = /mnt/data1/abarth/.julia/juliaup/julia-1.11.6+0.x64.linux.gnu/
+JULIA_BASE = $(HOME)/.julia/juliaup/julia-1.11.6+0.x64.linux.gnu/
 CFLAGS = -g -C -std=gnu11 -I$(JULIA_BASE)include/julia -fPIC
 CXXFLAGS = -std=gnu11 -I$(JULIA_BASE)include/julia -fPIC
 FFLAGS= -g -C  -fPIC
@@ -16,8 +16,13 @@ all: embed test_matmul test_matmulf
 embed: embed.c
 #test_matmul: test_matmul.c
 
-test_matmulf:
-	gfortran test_matmulf.f90 $(FFLAGS) $(LDFLAGS) $(LDLIBS) -o test_matmulf
+FC = gfortran
+
+%.o: %.f90
+	$(FC) $(FFLAGS) -c $< -o $@
+
+test_matmulf: test_matmulf.o
+	$(FC) test_matmulf.o $(LDFLAGS) $(LDLIBS) -o $@
 
 echo:
 	echo $(CFLAGS)

@@ -88,17 +88,17 @@ program test_matmul
   implicit none
 
   ! Julia types
-  type(c_ptr) :: jl_array_type, jl_main_mod, mylinalg_val, mylinalg
+  type(c_ptr) :: jl_array_type, mylinalg_val, mylinalg
   type(c_ptr) :: mulbang, dims, A, B, C
   type(c_ptr) :: array2d_type
 
   ! Matrix size
   integer(c_int), parameter :: n = 2
-  real(c_double), dimension(n*n), target :: A_data = [1.0_c_double, 3.0_c_double, &
-                                               2.0_c_double, 4.0_c_double]
-  real(c_double), dimension(n*n), target :: B_data = [5.0_c_double, 7.0_c_double, &
-                                               6.0_c_double, 8.0_c_double]
-  real(c_double), dimension(n*n), target :: C_data = 0.0_c_double
+  real(c_double), dimension(n*n), target :: A_data = [1.0, 3.0, &
+                                               2.0, 4.0]
+  real(c_double), dimension(n*n), target :: B_data = [5.0, 7.0, &
+                                               6.0, 8.0]
+  real(c_double), dimension(n*n), target :: C_data = 0.0
 
   integer :: i, j
   type(c_ptr) :: tmp
@@ -113,9 +113,7 @@ program test_matmul
   tmp = jl_eval_string('using MyLinAlg'//C_NULL_CHAR)
 
   ! Get MyLinAlg module and mul! function
-  jl_main_mod = jl_main_module
-  mylinalg_val = jl_get_global(jl_main_mod, jl_symbol("MyLinAlg"//C_NULL_CHAR))
-  mylinalg = mylinalg_val
+  mylinalg = jl_get_global(jl_main_module, jl_symbol("MyLinAlg"//C_NULL_CHAR))
   mulbang = jl_get_function(mylinalg, "mul!"//C_NULL_CHAR)
 
   ! Array type for Array{Float64,2}
