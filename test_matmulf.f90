@@ -26,6 +26,12 @@ module julia
     type(c_ptr) :: res
    end function jl_eval_string
 
+   function jl_cstr_to_string(str) result(res) bind(C, name="jl_cstr_to_string")
+    import :: c_ptr, c_char
+    character(kind=c_char), dimension(*) :: str
+    type(c_ptr) :: res
+   end function jl_cstr_to_string
+
    function jl_get_global(mod, name) result(res) bind(C, name="jl_get_global")
     import :: c_ptr
     type(c_ptr), value :: mod
@@ -127,9 +133,21 @@ contains
 
  subroutine jl_add_load_path(path)
   character(len=*) :: path
-  type(c_ptr) :: tmp
+  type(c_ptr) :: tmp, load_path
 
-  tmp = jl_eval_string('push!(LOAD_PATH,"' // path // '")'//C_NULL_CHAR)
+  load_path = jl_get_global(jl_main_module, jl_symbol("LOAD_PATH"//C_NULL_CHAR))
+
+  if (.not.c_associated(load_path)) then
+    write(0,*) "julia LOAD_PATH not found"
+    stop
+  end if
+
+  tmp = jl_call2(fun_push_b, load_path, jl_cstr_to_string(trim(path)//C_NULL_CHAR));
+
+  if (.not.c_associated(tmp)) then
+    write(0,*) "jl_add_load_path failed"
+    stop
+  end if
 
  end subroutine jl_add_load_path
 
@@ -137,8 +155,14 @@ contains
   character(len=*) :: modname
   type(c_ptr) :: tmp, res
 
+  res = c_null_ptr
   tmp = jl_eval_string('using ' // modname // C_NULL_CHAR)
-  res = jl_get_global(jl_main_module, jl_symbol(modname//C_NULL_CHAR))
+
+  if (.not.c_associated(tmp)) then
+    return
+  else
+    res = jl_get_global(jl_main_module, jl_symbol(modname//C_NULL_CHAR))
+  end if
  end function jl_using
 
 
@@ -151,7 +175,7 @@ program test_matmul
  implicit none
 
  type(c_ptr) :: jl_array_type, mylinalg_val, mylinalg
- type(c_ptr) :: mulbang, dims, A, B, C
+ type(c_ptr) :: fun_mul_b, dims, A, B, C
  type(c_ptr) :: array2d_type
 
  integer(c_int), parameter :: n = 2
@@ -168,14 +192,25 @@ program test_matmul
  call jl_init()
  call jl_add_load_path('.')
  mylinalg = jl_using('MyLinAlg')
- mulbang = jl_get_function(mylinalg, "mul!")
+
+ if (.not.c_associated(mylinalg)) then
+   write(0,*) "julia module MyLinAlg not found"
+   stop
+ end if
+
+ fun_mul_b = jl_get_function(mylinalg, "mul!")
+
+ if (.not.c_associated(fun_mul_b)) then
+   write(0,*) "function mul! not found"
+   stop
+ end if
 
  A = jl_to_array_f64_2(A_data)
  B = jl_to_array_f64_2(B_data)
  C = jl_to_array_f64_2(C_data)
 
  ! Call mul!(C, A, B)
- tmp = jl_call3(mulbang, C, A, B)
+ tmp = jl_call3(fun_mul_b, C, A, B)
 
  ! Print result
  print *, "Result C = A*B:"
