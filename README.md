@@ -1,10 +1,18 @@
 
+This is an example how to call julia from Fortran.
 
-julia is assumed to be installed and in your PATH:
 
-Compile with:
+Prerequesites (installed and in your PATH):
+* julia (tested with version 1.11.6).
+* cmake (tested vesion 3.28.3)
+* C and Fortran compiler (tested with gcc/gfortran version 13.3.0)
+
+
+The code can be compiled with:
 
 ```bash
 cmake .
 make
 ```
+
+Before calling julia from Fortran it is instructive to call first Julia from C.
