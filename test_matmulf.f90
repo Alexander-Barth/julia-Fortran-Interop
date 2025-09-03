@@ -2,10 +2,14 @@ module julia
  use iso_c_binding
  implicit none
 
- type(c_ptr) :: fun_tuple
 
+ ! global variables
  type(c_ptr),   bind(C, name="jl_main_module")  :: jl_main_module
  type(c_ptr),   bind(C, name="jl_float64_type") :: jl_float64_type
+
+ ! function handlers
+ type(c_ptr) :: fun_tuple
+ type(c_ptr) :: fun_push_b
 
  interface
    subroutine ll_jl_init() bind(C, name="jl_init")
@@ -84,6 +88,7 @@ contains
  subroutine jl_init()
   call ll_jl_init()
   fun_tuple = jl_get_function(jl_main_module, "tuple"//C_NULL_CHAR)
+  fun_push_b = jl_get_function(jl_main_module, "push!"//C_NULL_CHAR)
  end subroutine jl_init
 
  function jl_get_function(mod, name) result(res)
@@ -125,6 +130,7 @@ contains
   type(c_ptr) :: tmp
 
   tmp = jl_eval_string('push!(LOAD_PATH,"' // path // '")'//C_NULL_CHAR)
+
  end subroutine jl_add_load_path
 
  function jl_using(modname) result(res)
