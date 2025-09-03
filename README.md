@@ -4,7 +4,7 @@ This is an example how to call julia from Fortran.
 
 Prerequesites (installed and in your PATH):
 * julia (tested with version 1.11.6).
-* cmake (tested vesion 3.28.3)
+* cmake (tested with vesion 3.28.3)
 * C and Fortran compiler (tested with gcc/gfortran version 13.3.0)
 
 
