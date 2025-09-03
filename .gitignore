@@ -1,0 +1,9 @@
+# CMake generated files and directories
+#######################################
+/build/
+/CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+cmake_install.cmake
+install_manifest.txt
+*.cmake.in
