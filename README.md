@@ -20,4 +20,4 @@ Before calling julia from Fortran it is instructive to call first Julia from C.
 
 * `embed.c`: simple C example calling build-in functions in julia
 * `test_matmul.c`: C example calling a function in the module `MyLinAlg.jl`
-* `test_matmulf.c`: Fortran example calling a function in the module `MyLinAlg.jl`
+* `test_matmulf.f90`: Fortran example calling a function in the module `MyLinAlg.jl`
