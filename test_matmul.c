@@ -4,8 +4,8 @@
 
 JULIA_DEFINE_FAST_TLS
 
-jl_function_t *tuple;
-jl_function_t *push_;
+jl_value_t *tuple;
+jl_value_t *push_;
 jl_value_t *load_path;
 
 void julia_add_load_path(const char* path) {
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     jl_module_t *mylinalg = (jl_module_t*)mylinalg_val;
 
     // Get mul! function
-    jl_function_t *mulbang = jl_get_function(mylinalg, "mul!");
+    jl_value_t *mulbang = jl_get_function(mylinalg, "mul!");
 
     // Matrix size
     int n = 2;

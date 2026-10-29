@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
     jl_init();
 
 
-    jl_function_t *func = jl_get_function(jl_base_module, "sqrt");
+    jl_value_t *func = jl_get_function(jl_base_module, "sqrt");
     jl_value_t *argument = jl_box_float64(2.0);
     jl_value_t *ret = jl_call1(func, argument);
     double result = jl_unbox_float64(ret);
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     jl_array_t *jarray = jl_ptr_to_array_1d(array_type, data, 5, 0);
 
     // Call sum
-    jl_function_t *sum_func = jl_get_function(jl_base_module, "sum");
+    jl_value_t *sum_func = jl_get_function(jl_base_module, "sum");
     jl_value_t *ret_sum = jl_call1(sum_func, (jl_value_t*)jarray);
 
     // Unbox result
