@@ -33,9 +33,9 @@ program test_matmul
    stop
  end if
 
- A = jl_to_array_f64_2(A_data)
- B = jl_to_array_f64_2(B_data)
- C = jl_to_array_f64_2(C_data)
+ A = jl_to_array(A_data)
+ B = jl_to_array(B_data)
+ C = jl_to_array(C_data)
 
  ! Call mul!(C, A, B)
  tmp = jl_call3(fun_mul_b, C, A, B)

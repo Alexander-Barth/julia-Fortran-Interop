@@ -113,6 +113,12 @@ module julia
  end interface
 
 
+ interface jl_to_array
+   module procedure jl_to_array_f64_1
+   module procedure jl_to_array_f64_2
+   module procedure jl_to_array_f64_3
+ end interface jl_to_array
+
 
 contains
 
@@ -150,6 +156,16 @@ contains
   res = jl_call(fun_tuple, arg, size(x))
  end function jl_ntuple_int64
 
+ function jl_to_array_f64_1(A_data) result(res)
+   real(8), target :: A_data(:)
+   type(c_ptr) :: dims, res
+   type(c_ptr) :: array1d_type
+
+   dims = jl_ntuple_int64(int(shape(A_data),8))
+   array1d_type = jl_apply_array_type(jl_float64_type, size(shape(A_data)))
+   res = jl_ptr_to_array(array1d_type, c_loc(A_data), dims, 0)
+ end function jl_to_array_f64_1
+
  function jl_to_array_f64_2(A_data) result(res)
    real(8), target :: A_data(:,:)
    type(c_ptr) :: dims, res
@@ -159,6 +175,16 @@ contains
    array2d_type = jl_apply_array_type(jl_float64_type, size(shape(A_data)))
    res = jl_ptr_to_array(array2d_type, c_loc(A_data), dims, 0)
  end function jl_to_array_f64_2
+
+ function jl_to_array_f64_3(A_data) result(res)
+   real(8), target :: A_data(:,:,:)
+   type(c_ptr) :: dims, res
+   type(c_ptr) :: array3d_type
+
+   dims = jl_ntuple_int64(int(shape(A_data),8))
+   array3d_type = jl_apply_array_type(jl_float64_type, size(shape(A_data)))
+   res = jl_ptr_to_array(array3d_type, c_loc(A_data), dims, 0)
+ end function jl_to_array_f64_3
 
  subroutine jl_add_load_path(path)
   character(len=*) :: path
