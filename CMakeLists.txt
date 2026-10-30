@@ -34,7 +34,7 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g -C -fPIC")
 
 add_executable(embed embed.c)
 add_executable(test_matmul test_matmul.c)
-add_executable(test_matmulf test_matmulf.f90)
+add_executable(test_matmulf test_matmulf.f90 julia_wrapper.c)
 
 
 target_link_libraries(embed PRIVATE ${JULIA_LDFLAGS} ${JULIA_LDLIBS})

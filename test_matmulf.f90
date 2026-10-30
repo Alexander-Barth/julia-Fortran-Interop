@@ -2,18 +2,41 @@ module julia
  use iso_c_binding
  implicit none
 
-
  ! global variables
- type(c_ptr),   bind(C, name="jl_main_module")  :: jl_main_module
- type(c_ptr),   bind(C, name="jl_float64_type") :: jl_float64_type
+ ! note since julia 1.13 the following does not work any more:
+ ! type(c_ptr),   bind(C, name="jl_main_module")  :: jl_main_module
+ ! we need a C function including julia.h and returning the jl_main_module
+ ! pointer. This is done in jl_setup().
+ type(c_ptr) :: jl_main_module
+ type(c_ptr) :: jl_base_module
+ ! add all types that you need
+ type(c_ptr) :: jl_float64_type
 
  ! function handlers
  type(c_ptr) :: fun_tuple
  type(c_ptr) :: fun_push_b
 
  interface
-   subroutine ll_jl_init() bind(C, name="jl_init")
-   end subroutine ll_jl_init
+   subroutine jl_init() bind(C, name="jl_init")
+   end subroutine jl_init
+
+   function get_jl_main_module() result(p) &
+        bind(C, name="get_jl_main_module")
+    import :: c_ptr
+    type(c_ptr) :: p
+   end function get_jl_main_module
+
+   function get_jl_base_module() result(p) &
+        bind(C, name="get_jl_base_module")
+    import :: c_ptr
+    type(c_ptr) :: p
+   end function get_jl_base_module
+
+   function get_jl_float64_type() result(p) &
+        bind(C, name="get_jl_float64_type")
+    import :: c_ptr
+    type(c_ptr) :: p
+   end function get_jl_float64_type
 
    subroutine jl_atexit_hook(status) bind(C, name="jl_atexit_hook")
     import :: c_int
@@ -86,16 +109,29 @@ module julia
     type(c_ptr), value :: f, arg1, arg2, arg3
     type(c_ptr) :: res
    end function jl_call3
+
+function dlopen(filename, flags) result(handle) bind(C, name="dlopen")
+        use iso_c_binding
+        type(c_ptr) :: handle
+        character(kind=c_char), intent(in) :: filename(*)
+        integer(c_int), value :: flags
+    end function
+
  end interface
+
 
 
 contains
 
- subroutine jl_init()
-  call ll_jl_init()
-  fun_tuple = jl_get_function(jl_main_module, "tuple"//C_NULL_CHAR)
-  fun_push_b = jl_get_function(jl_main_module, "push!"//C_NULL_CHAR)
- end subroutine jl_init
+ subroutine jl_setup()
+  call jl_init()
+  jl_main_module = get_jl_main_module()
+  jl_base_module = get_jl_base_module()
+  jl_float64_type = get_jl_float64_type()
+
+  fun_tuple = jl_get_function(jl_base_module, "tuple"//C_NULL_CHAR)
+  fun_push_b = jl_get_function(jl_base_module, "push!"//C_NULL_CHAR)
+ end subroutine jl_setup
 
  function jl_get_function(mod, name) result(res)
   type(c_ptr), value :: mod
@@ -138,14 +174,14 @@ contains
   load_path = jl_get_global(jl_main_module, jl_symbol("LOAD_PATH"//C_NULL_CHAR))
 
   if (.not.c_associated(load_path)) then
-    write(0,*) "julia LOAD_PATH not found"
+    write(0,*) "ERROR: the julia variable LOAD_PATH was not found."
     stop
   end if
 
   tmp = jl_call2(fun_push_b, load_path, jl_cstr_to_string(trim(path)//C_NULL_CHAR));
 
   if (.not.c_associated(tmp)) then
-    write(0,*) "jl_add_load_path failed"
+    write(0,*) "ERROR: jl_add_load_path failed"
     stop
   end if
 
@@ -189,19 +225,19 @@ program test_matmul
  B_data = reshape([5.0, 7.0, 6.0, 8.0],shape(B_data))
  C_data = 0
 
- call jl_init()
+ call jl_setup()
  call jl_add_load_path('.')
  mylinalg = jl_using('MyLinAlg')
 
  if (.not.c_associated(mylinalg)) then
-   write(0,*) "julia module MyLinAlg not found"
+   write(0,*) "ERROR: julia module MyLinAlg not found"
    stop
  end if
 
  fun_mul_b = jl_get_function(mylinalg, "mul!")
 
  if (.not.c_associated(fun_mul_b)) then
-   write(0,*) "function mul! not found"
+   write(0,*) "ERROR: function mul! not found"
    stop
  end if
 
