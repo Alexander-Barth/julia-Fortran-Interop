@@ -18,6 +18,7 @@ program test_matmul
  C_data = 0
 
  call jl_setup()
+ ! julia code is in the file MyLinAlg.jl assumed to be in the current directory
  call jl_add_load_path('.')
  mylinalg = jl_using('MyLinAlg')
 
@@ -26,6 +27,7 @@ program test_matmul
    stop
  end if
 
+ ! get the julia function MyLinAlg.mul!
  fun_mul_b = jl_get_function(mylinalg, "mul!")
 
  if (.not.c_associated(fun_mul_b)) then
