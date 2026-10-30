@@ -39,7 +39,7 @@ program test_matmul
  B = jl_to_array(B_data)
  C = jl_to_array(C_data)
 
- ! Call mul!(C, A, B)
+ ! Call the 3-argument function mul!(C, A, B)
  tmp = jl_call3(fun_mul_b, C, A, B)
 
  ! Print result
