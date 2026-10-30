@@ -110,13 +110,6 @@ module julia
     type(c_ptr) :: res
    end function jl_call3
 
-function dlopen(filename, flags) result(handle) bind(C, name="dlopen")
-        use iso_c_binding
-        type(c_ptr) :: handle
-        character(kind=c_char), intent(in) :: filename(*)
-        integer(c_int), value :: flags
-    end function
-
  end interface
 
 
