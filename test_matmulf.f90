@@ -199,7 +199,6 @@ end module julia
 
 
 program test_matmul
- use iso_c_binding
  use julia
  implicit none
 
